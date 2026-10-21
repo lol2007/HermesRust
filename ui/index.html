@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HermesRust — Agent Desktop</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%234f6ef7'/><text x='50' y='72' font-family='sans-serif' font-size='58' font-weight='bold' fill='white' text-anchor='middle'>H</text></svg>">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ══════════════════ SIDEBAR ══════════════════ -->
+  <aside id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">H</div>
+      <div class="logo-text">
+        <div class="logo-name">HermesRust</div>
+        <div class="logo-sub">Agent Desktop · Rust</div>
+      </div>
+    </div>
+
+    <button class="new-chat-btn" onclick="newChat()">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      New chat
+    </button>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Sessions</div>
+      <div id="sessionsList" class="sessions-list"></div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="sidebar-label">Workspace</div>
+      <button class="nav-item active" data-view="chat" onclick="showView('chat')">
+        <span class="nav-ico">💬</span> Chat
+      </button>
+      <button class="nav-item" data-view="agents" onclick="showView('agents')">
+        <span class="nav-ico">🤖</span> Agents <span id="navAgentCount" class="nav-badge">20</span>
+      </button>
+      <button class="nav-item" data-view="skills" onclick="showView('skills')">
+        <span class="nav-ico">⚡</span> Skill Store
+      </button>
+      <button class="nav-item" data-view="settings" onclick="showView('settings')">
+        <span class="nav-ico">⚙️</span> Settings
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="conn-row">
+        <span id="connDot" class="conn-dot offline"></span>
+        <span id="connText" class="conn-text">Connecting…</span>
+      </div>
+      <div class="sidebar-meta">
+        <span id="footVersion">HermesRust</span>
+        <span class="footer-sep">·</span>
+        <button class="link-btn" onclick="location.reload()" title="Reload UI (picks up live ui/ edits)">Reload UI</button>
+        <span class="footer-sep">·</span>
+        <button class="link-btn" onclick="quitApp()" title="Stop the server and close the app">Quit</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══════════════════ MAIN ══════════════════ -->
+  <main id="main">
+
+    <!-- Top bar -->
+    <header id="topbar">
+      <div class="topbar-left">
+        <h1 id="viewTitle">Chat</h1>
+      </div>
+      <div class="topbar-right">
+        <div id="statusBar" class="status-bar">
+          <span id="statusDot" class="status-dot"></span>
+          <span id="statusText">Ready</span>
+        </div>
+        <button class="workspace-btn" onclick="toggleWorkspaceMenu(event)" title="Working directory">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none"><path d="M2 4.5A1.5 1.5 0 0 1 3.5 3h3l1.5 1.5h4.5A1.5 1.5 0 0 1 14 6v5.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 11.5v-7z" stroke="currentColor" stroke-width="1.4"/></svg>
+          <span id="workspaceLabel">Set workspace</span>
+        </button>
+        <div class="model-switch" id="modelSwitch">
+          <button class="model-btn" onclick="toggleModelDropdown(event)">
+            <span class="model-dot"></span>
+            <span id="currentModel">—</span>
+            <svg viewBox="0 0 12 12" width="10" height="10" fill="none"><path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+          <div id="modelDropdown" class="model-dropdown"></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── CHAT VIEW ── -->
+    <section id="view-chat" class="view active">
+      <div id="welcomeScreen" class="welcome">
+        <div class="welcome-logo">H</div>
+        <h2>One request.<br>A whole AI team.</h2>
+        <p>20 specialists — led by a Project Manager — decompose, delegate and deliver. Describe what you need.</p>
+        <div class="welcome-cards">
+          <div class="welcome-card" onclick="quickPrompt('Design a modern login page and implement it')">
+            <span>🎨</span><b>Design & build</b><small>A login page, end to end</small>
+          </div>
+          <div class="welcome-card" onclick="quickPrompt('Analyse the architecture of my project and propose improvements')">
+            <span>🏗️</span><b>Review & advise</b><small>Architecture deep-dive</small>
+          </div>
+          <div class="welcome-card" onclick="quickPrompt('Plan the launch of a mobile app, from PRD to marketing')">
+            <span>🚀</span><b>Plan & launch</b><small>Full product plan</small>
+          </div>
+        </div>
+      </div>
+      <div id="messagesContainer" class="messages"></div>
+      <div class="composer-wrap">
+        <div class="composer">
+          <textarea id="userInput" placeholder="Describe your task — the PM will dispatch the team…  (Enter to send, Shift+Enter for a new line)" rows="1" onkeydown="handleKeyDown(event)" oninput="autoResize(this)"></textarea>
+          <button id="sendBtn" class="send-btn" onclick="sendMessage()" title="Send">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M3 13l10-5L3 3v4l6 1-6 1v4z" fill="currentColor"/></svg>
+          </button>
+        </div>
+        <div class="composer-hint">
+          <span id="hintModel"></span>
+          <span id="hintWorkspace"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── AGENTS VIEW ── -->
+    <section id="view-agents" class="view">
+      <div class="agents-stats">
+        <div class="stat-card"><div class="stat-value" id="agStatTotal">0</div><div class="stat-label">Agents</div></div>
+        <div class="stat-card"><div class="stat-value" id="agStatWorking">0</div><div class="stat-label">Working</div></div>
+        <div class="stat-card"><div class="stat-value" id="agStatProgress">—</div><div class="stat-label">Avg progress</div></div>
+        <div class="stat-card"><div class="stat-value" id="agStatDone">0</div><div class="stat-label">Tasks done</div></div>
+      </div>
+      <div class="section-head">
+        <h2>AI Team</h2>
+        <button class="primary-btn" onclick="openAgentEditor(null)">+ New agent</button>
+      </div>
+      <div id="agentsGrid" class="agents-grid"></div>
+    </section>
+
+    <!-- ── SKILLS VIEW ── -->
+    <section id="view-skills" class="view">
+      <div class="section-head">
+        <h2>Skill Store</h2>
+        <button class="ghost-btn" onclick="window.open('https://skill.cocoloop.com','_blank')">Browse full marketplace ↗</button>
+      </div>
+      <div class="skills-toolbar">
+        <input id="skillSearch" class="search-input" type="search" placeholder="Search skills…" oninput="renderSkills()">
+        <select id="skillCategory" class="category-select" onchange="renderSkills()">
+          <option value="">All categories</option>
+        </select>
+      </div>
+      <div id="skillsGrid" class="skills-grid"></div>
+    </section>
+
+    <!-- ── SETTINGS VIEW ── -->
+    <section id="view-settings" class="view">
+      <div class="settings-columns">
+        <div class="settings-card">
+          <h3>LLM provider <span class="live-pill">LIVE</span></h3>
+          <p class="settings-desc">Saved to <code id="cfgPathNote">config/config.toml</code> on the server — applied instantly, no restart.</p>
+          <label class="field-label">Endpoint (OpenAI-compatible base URL)</label>
+          <input id="setEndpoint" class="text-input" type="text" placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1">
+          <label class="field-label">API key</label>
+          <input id="setApiKey" class="text-input" type="password" placeholder="•••••••••••• (leave empty to keep)">
+          <label class="field-label">Default model</label>
+          <input id="setModel" class="text-input" type="text" placeholder="kimi-k2.5">
+          <label class="field-label">Model switcher list <small>(comma-separated)</small></label>
+          <input id="setModels" class="text-input" type="text" placeholder="gpt-4o, deepseek-r1, qwen-max">
+          <div class="settings-actions">
+            <button class="primary-btn" onclick="saveServerConfig()">Save & apply live</button>
+            <button class="ghost-btn" onclick="checkConnection()">Test connection</button>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h3>Advanced</h3>
+          <p class="settings-desc">Override the server endpoint from the browser (e.g. point the UI at another HermesRust instance). Stored locally only.</p>
+          <label class="field-label">UI endpoint override</label>
+          <input id="setLocalEndpoint" class="text-input" type="text" placeholder="(use server — recommended)">
+          <div class="settings-actions">
+            <button class="ghost-btn" onclick="saveLocalOverride()">Save local override</button>
+            <button class="ghost-btn danger" onclick="clearLocalData()">Clear local data</button>
+          </div>
+          <h3 style="margin-top:28px">About</h3>
+          <div id="aboutBox" class="about-box">
+            <div><b>HermesRust</b> <span id="aboutVersion"></span></div>
+            <div class="about-line">Pure-Rust rewrite of <i>Hermes Agent Desktop</i> (Python/pywebview) — same team-based workflow, a fraction of the resources.</div>
+            <div class="about-line" id="aboutStats"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ══════════════════ AGENT EDITOR OVERLAY ══════════════════ -->
+<div id="agentEditorOverlay" class="overlay" onclick="if(event.target===this)closeAgentEditor()">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="agentEditorTitle">New agent</h3>
+      <button class="close-btn" onclick="closeAgentEditor()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row-2">
+        <div>
+          <label class="field-label">Name</label>
+          <input id="agentName" class="text-input" type="text" placeholder="e.g. Rust Engineer">
+        </div>
+        <div>
+          <label class="field-label">Short label</label>
+          <input id="agentAbbr" class="text-input" type="text" placeholder="e.g. RST">
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div>
+          <label class="field-label">Icon (emoji)</label>
+          <input id="agentIcon" class="text-input" type="text" placeholder="🦀">
+        </div>
+        <div>
+          <label class="field-label">Color</label>
+          <input id="agentColor" class="text-input" type="color" value="#4f6ef7">
+        </div>
+      </div>
+      <label class="field-label">Description</label>
+      <input id="agentDesc" class="text-input" type="text" placeholder="What this specialist does">
+      <label class="field-label">System prompt</label>
+      <textarea id="agentPrompt" class="textarea" rows="5" placeholder="You are a senior…"></textarea>
+      <label class="field-label">Skills <small>(comma-separated)</small></label>
+      <input id="agentSkills" class="text-input" type="text" placeholder="Rust, tokio, axum">
+      <label class="check-row"><input id="agentIsMain" type="checkbox"> Make this agent the Project Manager (main orchestrator)</label>
+      <div class="settings-actions">
+        <button class="primary-btn" onclick="saveAgent()">Save agent</button>
+        <button id="agentDeleteBtn" class="ghost-btn danger" style="display:none" onclick="deleteAgent()">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ WORKSPACE PROMPT ══════════════════ -->
+<div id="workspacePrompt" class="overlay" onclick="if(event.target===this)skipWorkspacePrompt()">
+  <div class="modal small">
+    <div class="modal-head"><h3>Choose a workspace</h3></div>
+    <div class="modal-body">
+      <p class="settings-desc">The team works inside a working directory. Pick a folder or type a path.</p>
+      <input id="workspaceInput" class="text-input" type="text" placeholder="~/Projects/my-app">
+      <div class="settings-actions">
+        <button class="primary-btn" onclick="chooseWorkspaceFromPrompt()">Start working</button>
+        <button class="ghost-btn" onclick="openNativeFolderPicker()">Browse…</button>
+        <button class="link-btn" onclick="skipWorkspacePrompt()">Skip for now</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ WORKSPACE BROWSER ══════════════════ -->
+<div id="workspaceMenu" class="popover">
+  <div class="popover-head">
+    <b id="wsCurrent"></b>
+    <button class="close-btn" onclick="closeWorkspaceMenu()">×</button>
+  </div>
+  <div id="wsDirs" class="ws-dirs"></div>
+  <div class="popover-foot">
+    <button class="ghost-btn" onclick="wsGoUp()">↑ Parent</button>
+    <button class="ghost-btn" onclick="openNativeFolderPicker()">Native picker…</button>
+    <button class="primary-btn" onclick="wsSelectCurrent()">Select this</button>
+  </div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
