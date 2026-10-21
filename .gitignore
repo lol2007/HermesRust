@@ -1,0 +1,9 @@
+/target
+Cargo.lock.orig
+*.log
+.DS_Store
+Thumbs.db
+.env
+release-dist/
+mock_upstream_last.json
+config/config.toml.bak
